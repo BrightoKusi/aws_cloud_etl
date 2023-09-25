@@ -35,3 +35,23 @@ response = client.create_bucket(
         'LocationConstraint': region,
     },
 )
+
+
+# Step 2. Extract data from postgres to data lake
+conn = engine = create_engine(f"postgresql+psycopg2://{db_user}:{db_password}@{db_host}:5432/{db_database}") 
+
+
+db_tables = ['banks', 'cards', 'cust_verification_status', 'transaction_status', 'transactions', 'users', 'wallets']
+
+for table in db_tables:
+    query = f'SELECT * FROM {table}'
+    df = pd.read_sql_query(query, conn)
+
+    df.to_csv(
+        f's3://{bucket_name}/{table}.csv'
+        ,index= False
+        ,storage_options = {
+            'key': access_key,
+            'secret': secret_key 
+        }
+        )
